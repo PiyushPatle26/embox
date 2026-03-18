@@ -11,6 +11,7 @@
 #include <framework/mod/options.h>
 #include <drivers/common/memory.h>
 #include <drivers/spi.h>
+#include <drivers/gpio.h>
 #include <drivers/clk/ccm_imx6.h>
 #include <drivers/iomuxc.h>
 
@@ -22,13 +23,23 @@ EMBOX_UNIT_INIT(imx6_ecspi1_init);
 
 static struct imx6_ecspi imx6_ecspi1 = {
 	.base_addr = BASE_ADDR,
-	.cs_count  = 4,
-	.cs_array  = { {1, 30}, {2, 19}, {2, 24}, {2, 25} }
+	.cs_count  = 1, /* Only CS0 is wired on sabrelite: GPIO3 pin 19 */
+	/* Format: [port_index, pin_number]  (port is 0-based: GPIO1=0, GPIO2=1, GPIO3=2)
+	 * QEMU sabrelite.c: qdev_connect_gpio_out(DEVICE(&s->gpio[2]), 19, cs_line) */
+	.cs_array  = { {2, 19} }
 };
 
 static void imx_ecspi1_pins_init(void) {
-	/* TODO Make init like for escpi2.
-	 * Currenly it is inited by uboot. */
+	int i, gpio_n, port;
+	/* Configure all CS pins as GPIO output, pre-driven HIGH (deasserted).
+	 * imx6_ecspi_set_cs() drives them LOW to assert and HIGH to deassert.
+	 * Without this setup the GPIO is in input mode and gpio_set() is a no-op. */
+	for (i = 0; i < (int)imx6_ecspi1.cs_count; i++) {
+		gpio_n = imx6_ecspi1.cs_array[i][0];
+		port   = imx6_ecspi1.cs_array[i][1];
+		gpio_setup_mode(gpio_n, 1 << port, GPIO_MODE_OUT);
+		gpio_set(gpio_n, 1 << port, 1); /* deasserted = high */
+	}
 }
 
 static int imx6_ecspi1_init(void) {

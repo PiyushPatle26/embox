@@ -62,14 +62,10 @@ int imx6_ecspi_init(struct imx6_ecspi *dev) {
 	/* Set default speed */
 	REG32_ORIN(ECSPI_CONREG(dev), 0x2 << 12);
 
-	/* SCLK_CTL */
-	REG32_ORIN(ECSPI_CONFIGREG(dev), 0xf << 20);
-	/* DATA_CTL */
-	REG32_ORIN(ECSPI_CONFIGREG(dev), 0xf << 16);
-	/* SCLK_POL */
-	REG32_ORIN(ECSPI_CONFIGREG(dev), 0xf << 4);
-	/* SCLK_PHA */
-	REG32_ORIN(ECSPI_CONFIGREG(dev), 0xf << 0);
+	/* Leave CONFIGREG at reset default (0) for SPI Mode 0 (CPOL=0, CPHA=0).
+	 * SPI NOR flash (SST25VF016B and most others) require Mode 0.
+	 * Do NOT OR in SCLK_POL (bits[4:7]) or SCLK_PHA (bits[0:3]) — those
+	 * would force Mode 3 and corrupt every clock edge. */
 
 	imx6_ecspi_show_regs(dev);
 
