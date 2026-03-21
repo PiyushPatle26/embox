@@ -21,12 +21,15 @@ EMBOX_UNIT_INIT(imx6_ecspi1_init);
 
 #define BASE_ADDR OPTION_GET(NUMBER, base_addr)
 
+/* cs_count controlled via Mybuild option (default 1 for sabrelite CS0).
+ * Set cs_count=4 to restore legacy 4-CS behaviour. */
+#define ECSPI1_CS_COUNT  OPTION_GET(NUMBER, cs_count)
+
 static struct imx6_ecspi imx6_ecspi1 = {
-	.base_addr = BASE_ADDR,
-	.cs_count  = 1, /* Only CS0 is wired on sabrelite: GPIO3 pin 19 */
-	/* Format: [port_index, pin_number]  (port is 0-based: GPIO1=0, GPIO2=1, GPIO3=2)
-	 * QEMU sabrelite.c: qdev_connect_gpio_out(DEVICE(&s->gpio[2]), 19, cs_line) */
-	.cs_array  = { {2, 19} }
+	.base_addr     = BASE_ADDR,
+	.cs_count      = ECSPI1_CS_COUNT,
+	.cs_array      = { {2, 19}, {1, 30}, {2, 24}, {2, 25} },
+	.use_configreg = OPTION_GET(NUMBER, use_configreg),
 };
 
 static void imx_ecspi1_pins_init(void) {
